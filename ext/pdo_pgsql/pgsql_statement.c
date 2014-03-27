@@ -488,7 +488,8 @@ static int pgsql_stmt_describe(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 
 #ifdef HAVE_JSON
 		case PHP_PDO_PGSQL_OID_JSON:
-			cols[colno].param_type = PDO_PARAM_ZVAL;
+			cols[colno].param_type = S->H->auto_parse_json ?
+				PDO_PARAM_ZVAL : PDO_PARAM_STR;
 			break;
 #endif
 		default:

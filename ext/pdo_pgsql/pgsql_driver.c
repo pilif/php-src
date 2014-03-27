@@ -446,6 +446,11 @@ static int pdo_pgsql_get_attribute(pdo_dbh_t *dbh, long attr, zval *return_value
 			ZVAL_STRING(return_value, tmp, 0);
 		}
 			break;
+#ifdef HAVE_JSON
+		case PDO_PGSQL_PARSE_JSON:
+			ZVAL_BOOL(return_value, H->auto_parse_json);
+			break;
+#endif
 
 		default:
 			return 0;	
@@ -1008,6 +1013,11 @@ static int pdo_pgsql_set_attr(pdo_dbh_t *dbh, long attr, zval *val TSRMLS_DC)
 			return 1;
 		case PDO_PGSQL_ATTR_DISABLE_NATIVE_PREPARED_STATEMENT:
 			H->disable_native_prepares = Z_LVAL_P(val);
+			return 1;
+#endif
+#ifdef HAVE_JSON
+		case PDO_PGSQL_PARSE_JSON:
+			H->auto_parse_json = Z_LVAL_P(val);
 			return 1;
 #endif
 

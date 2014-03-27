@@ -54,6 +54,9 @@ typedef struct {
 	int		disable_native_prepares;
 #endif
 	unsigned int stmt_counter;
+# ifdef HAVE_JSON
+    int auto_parse_json;
+#endif
 } pdo_pgsql_db_handle;
 
 typedef struct {
@@ -96,6 +99,9 @@ extern struct pdo_stmt_methods pgsql_stmt_methods;
 
 enum {
 	PDO_PGSQL_ATTR_DISABLE_NATIVE_PREPARED_STATEMENT = PDO_ATTR_DRIVER_SPECIFIC,
+#ifdef HAVE_JSON
+    PDO_PGSQL_PARSE_JSON,
+#endif
 };
 
 struct pdo_pgsql_lob_self {
