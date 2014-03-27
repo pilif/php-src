@@ -27,11 +27,14 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
-#include "ext/json/php_json.h"
 #include "pdo/php_pdo.h"
 #include "pdo/php_pdo_driver.h"
 #include "php_pdo_pgsql.h"
 #include "php_pdo_pgsql_int.h"
+#ifdef HAVE_JSON
+#include "ext/json/php_json.h"
+#endif
+
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -483,10 +486,11 @@ static int pgsql_stmt_describe(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 			cols[colno].param_type = PDO_PARAM_LOB;
 			break;
 
+#ifdef HAVE_JSON
 		case PHP_PDO_PGSQL_OID_JSON:
 			cols[colno].param_type = PDO_PARAM_ZVAL;
 			break;
-
+#endif
 		default:
 			cols[colno].param_type = PDO_PARAM_STR;
 	}
@@ -525,7 +529,7 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 				*ptr = (char *) &(S->cols[colno].boolval);
 				*len = sizeof(zend_bool);
 				break;
-
+#ifdef HAVE_JSON
 			case PDO_PARAM_ZVAL:
 				if (S->cols[colno].pgsql_type == PHP_PDO_PGSQL_OID_JSON) {
 					zval **ret = (zval**) emalloc(sizeof(zval));
@@ -539,6 +543,7 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 					*caller_frees = 1;
 				}
 				break;
+#endif
 
 			case PDO_PARAM_LOB:
 				if (S->cols[colno].pgsql_type == OIDOID) {

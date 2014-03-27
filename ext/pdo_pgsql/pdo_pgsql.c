@@ -25,7 +25,6 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
-#include "ext/json/php_json.h"
 #include "pdo/php_pdo.h"
 #include "pdo/php_pdo_driver.h"
 #include "php_pdo_pgsql.h"
@@ -92,7 +91,9 @@ PHP_MINIT_FUNCTION(pdo_pgsql)
 	REGISTER_PDO_CLASS_CONST_LONG("PGSQL_TRANSACTION_INTRANS", (long)PGSQL_TRANSACTION_INTRANS);
 	REGISTER_PDO_CLASS_CONST_LONG("PGSQL_TRANSACTION_INERROR", (long)PGSQL_TRANSACTION_INERROR);
 	REGISTER_PDO_CLASS_CONST_LONG("PGSQL_TRANSACTION_UNKNOWN", (long)PGSQL_TRANSACTION_UNKNOWN);
+#ifdef HAVE_JSON
 	REGISTER_PDO_CLASS_CONST_LONG("PGSQL_PARAM_JSON", (long)PGSQL_PARAM_JSON);
+#endif
 
 	php_pdo_register_driver(&pdo_pgsql_driver);
 	return SUCCESS;
@@ -114,11 +115,15 @@ PHP_MINFO_FUNCTION(pdo_pgsql)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "PDO Driver for PostgreSQL", "enabled");
-#ifdef HAVE_PG_CONFIG_H	
+#ifdef HAVE_PG_CONFIG_H
 	php_info_print_table_row(2, "PostgreSQL(libpq) Version", PG_VERSION);
-#endif	
+#endif
 	php_info_print_table_row(2, "Module version", pdo_pgsql_module_entry.version);
 	php_info_print_table_row(2, "Revision", " $Id$ ");
+#ifdef HAVE_JSON
+	php_info_print_table_row(2, "JSON support", "enabled");
+#endif
+
 
 	php_info_print_table_end();
 }
