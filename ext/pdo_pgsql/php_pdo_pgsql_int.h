@@ -81,6 +81,9 @@ typedef struct {
 	Oid *param_types;
 #endif
 	zend_bool is_prepared;
+#ifdef HAVE_JSON
+    int auto_parse_json;
+#endif
 } pdo_pgsql_stmt;
 
 typedef struct {

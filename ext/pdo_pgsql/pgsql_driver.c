@@ -229,6 +229,15 @@ static int pgsql_handle_preparer(pdo_dbh_t *dbh, const char *sql, long sql_len, 
 	scrollable = pdo_attr_lval(driver_options, PDO_ATTR_CURSOR,
 		PDO_CURSOR_FWDONLY TSRMLS_CC) == PDO_CURSOR_SCROLL;
 
+#ifdef HAVE_JSON
+	/* Default to the setting on the handle */
+	S->auto_parse_json = H->auto_parse_json;
+
+	if (driver_options){
+		S->auto_parse_json = pdo_attr_lval(driver_options, PDO_PGSQL_PARSE_JSON, H->auto_parse_json TSRMLS_CC);
+	}
+#endif
+
 	if (scrollable) {
 		if (S->cursor_name) {
 			efree(S->cursor_name);
