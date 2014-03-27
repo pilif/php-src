@@ -528,12 +528,15 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 
 			case PDO_PARAM_ZVAL:
 				if (S->cols[colno].pgsql_type == PHP_PDO_PGSQL_OID_JSON) {
+					zval **ret = (zval**) emalloc(sizeof(zval));
 					zval *z;
-					ALLOC_INIT_ZVAL(z);
+					MAKE_STD_ZVAL(z);
 					php_json_decode_ex(z, *ptr, *len, PHP_JSON_OBJECT_AS_ARRAY, 512 TSRMLS_CC);
-					Z_ADDREF_P(z);
+					*ret = z;
+
 					*len = sizeof(zval);
-					*ptr = (char*)&z;
+					*ptr = (char*)ret;
+					*caller_frees = 1;
 				}
 				break;
 
