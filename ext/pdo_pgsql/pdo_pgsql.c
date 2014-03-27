@@ -25,6 +25,7 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "ext/json/php_json.h"
 #include "pdo/php_pdo.h"
 #include "pdo/php_pdo_driver.h"
 #include "php_pdo_pgsql.h"
@@ -70,7 +71,7 @@ zend_module_entry pdo_pgsql_module_entry = {
 	NULL,
 	NULL,
 	PHP_MINFO(pdo_pgsql),
-	"1.0.2",
+	"1.1.0-psdev",
 	STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
@@ -91,6 +92,7 @@ PHP_MINIT_FUNCTION(pdo_pgsql)
 	REGISTER_PDO_CLASS_CONST_LONG("PGSQL_TRANSACTION_INTRANS", (long)PGSQL_TRANSACTION_INTRANS);
 	REGISTER_PDO_CLASS_CONST_LONG("PGSQL_TRANSACTION_INERROR", (long)PGSQL_TRANSACTION_INERROR);
 	REGISTER_PDO_CLASS_CONST_LONG("PGSQL_TRANSACTION_UNKNOWN", (long)PGSQL_TRANSACTION_UNKNOWN);
+	REGISTER_PDO_CLASS_CONST_LONG("PGSQL_PARAM_JSON", (long)PGSQL_PARAM_JSON);
 
 	php_pdo_register_driver(&pdo_pgsql_driver);
 	return SUCCESS;

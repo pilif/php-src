@@ -27,6 +27,7 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "ext/json/php_json.h"
 #include "pdo/php_pdo.h"
 #include "pdo/php_pdo_driver.h"
 #include "php_pdo_pgsql.h"
@@ -482,6 +483,10 @@ static int pgsql_stmt_describe(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 			cols[colno].param_type = PDO_PARAM_LOB;
 			break;
 
+		case PHP_PDO_PGSQL_OID_JSON:
+			cols[colno].param_type = PDO_PARAM_ZVAL;
+			break;
+
 		default:
 			cols[colno].param_type = PDO_PARAM_STR;
 	}
@@ -520,7 +525,18 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 				*ptr = (char *) &(S->cols[colno].boolval);
 				*len = sizeof(zend_bool);
 				break;
-				
+
+			case PDO_PARAM_ZVAL:
+				if (S->cols[colno].pgsql_type == PHP_PDO_PGSQL_OID_JSON) {
+					zval *z;
+					ALLOC_INIT_ZVAL(z);
+					php_json_decode_ex(z, *ptr, *len, PHP_JSON_OBJECT_AS_ARRAY, 512 TSRMLS_CC);
+					Z_ADDREF_P(z);
+					*len = sizeof(zval);
+					*ptr = (char*)&z;
+				}
+				break;
+
 			case PDO_PARAM_LOB:
 				if (S->cols[colno].pgsql_type == OIDOID) {
 					/* ooo, a real large object */
@@ -559,7 +575,6 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 			case PDO_PARAM_STR:
 			case PDO_PARAM_STMT:
 			case PDO_PARAM_INPUT_OUTPUT:
-			case PDO_PARAM_ZVAL:
 			default:
 				break;
 		}
