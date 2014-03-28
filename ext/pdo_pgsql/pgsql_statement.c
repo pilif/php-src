@@ -31,6 +31,8 @@
 #include "pdo/php_pdo_driver.h"
 #include "php_pdo_pgsql.h"
 #include "php_pdo_pgsql_int.h"
+#include "pdo_pgsql_parse_array.h"
+
 #ifdef HAVE_JSON
 #include "ext/json/php_json.h"
 #endif
@@ -40,13 +42,14 @@
 #endif
 
 /* from postgresql/src/include/catalog/pg_type.h */
-#define BOOLOID     16
-#define BYTEAOID    17
-#define INT8OID     20
-#define INT2OID     21
-#define INT4OID     23
-#define TEXTOID     25
-#define OIDOID      26
+#define BOOLOID          16
+#define BYTEAOID         17
+#define INT8OID          20
+#define INT2OID          21
+#define INT4OID          23
+#define TEXTOID          25
+#define OIDOID           26
+#define TEXTARRAYOID   1009
 
 static int pgsql_stmt_dtor(pdo_stmt_t *stmt TSRMLS_DC)
 {
@@ -492,6 +495,10 @@ static int pgsql_stmt_describe(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 				PDO_PARAM_ZVAL : PDO_PARAM_STR;
 			break;
 #endif
+		case TEXTARRAYOID:
+			cols[colno].param_type = PDO_PARAM_ZVAL;
+			break;
+
 		default:
 			cols[colno].param_type = PDO_PARAM_STR;
 	}
@@ -530,8 +537,9 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 				*ptr = (char *) &(S->cols[colno].boolval);
 				*len = sizeof(zend_bool);
 				break;
-#ifdef HAVE_JSON
+
 			case PDO_PARAM_ZVAL:
+#ifdef HAVE_JSON
 				if (S->cols[colno].pgsql_type == PHP_PDO_PGSQL_OID_JSON) {
 					zval **ret = (zval**) emalloc(sizeof(zval));
 					zval *z;
@@ -543,8 +551,20 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 					*ptr = (char*)ret;
 					*caller_frees = 1;
 				}
-				break;
 #endif
+				if (S->cols[colno].pgsql_type == TEXTARRAYOID) {
+					zval **ret = (zval**) emalloc(sizeof(zval));
+					char* err = NULL;
+					*ret = pdo_pgsql_parse_array(*ptr, *len, &err);
+					if (err != NULL){
+						pdo_pgsql_error(stmt->dbh, PGRES_FATAL_ERROR, err);
+					}
+
+					*len = sizeof(zval);
+					*ptr = (char*) ret;
+					*caller_frees = 1;
+				}
+				break;
 
 			case PDO_PARAM_LOB:
 				if (S->cols[colno].pgsql_type == OIDOID) {
