@@ -27,6 +27,8 @@
 #include <libpq/libpq-fs.h>
 #include <php.h>
 
+#include "pdo_pgsql_parse_array.h"
+
 #define PHP_PDO_PGSQL_CONNECTION_FAILURE_SQLSTATE "08006"
 #ifdef HAVE_JSON
 #define PHP_PDO_PGSQL_OID_JSON 114
@@ -64,6 +66,8 @@ typedef struct {
 	Oid          pgsql_type;
 	long         intval;
 	zend_bool    boolval;
+
+    pg_array_adder array_type_caster;
 } pdo_pgsql_column;
 
 typedef struct {

@@ -124,7 +124,7 @@ static int array_tokenize(const char *str, int strlength, int *pos, char** token
     return res;
 }
 
-static int array_scan(const char *str, int strlength, zval *arr, char** error){
+static int array_scan(const char *str, int strlength, zval *arr, pg_array_adder adder, char** error){
     int state, quotes = 0;
     int length = 0, pos = 0;
     char *token;
@@ -144,7 +144,10 @@ static int array_scan(const char *str, int strlength, zval *arr, char** error){
             if (!quotes && length == 4 && (strncasecmp(token, "null", 4) == 0)){
                 add_next_index_null(arr);
             } else {
-                add_next_index_stringl(arr, token, length, 1);
+                if (adder(arr, token, length) < 0){
+                    *error = "failed to populate array";
+                    return -1;
+                }
             }
 
             if (state == SCAN_QUOTED) efree(token);
@@ -176,8 +179,42 @@ static int array_scan(const char *str, int strlength, zval *arr, char** error){
     return 0;
 }
 
+int add_string_to_array(zval *array, char *str, int len){
+    if (add_next_index_stringl(array, str, len, 1) == FAILURE)
+        return -1;
 
-zval* pdo_pgsql_parse_array(char *str, int len, char **error){
+    return 0;
+}
+
+int add_long_to_array(zval *array, char *str, int len){
+    long value = strtol(str, NULL, 10);
+
+    if ( (value == 0) && (errno == ERANGE) ){
+        return add_next_index_stringl(array, str, len, 1);
+    }
+
+    if (add_next_index_long(array, value) == FAILURE)
+        return -1;
+
+    return 0;
+}
+
+int add_double_to_array(zval *array, char *str, int len){
+    if (add_next_index_double(array, strtod(str, NULL)) == FAILURE)
+        return -1;
+    return 0;
+}
+
+int add_bool_to_array(zval *array, char *str, int len){
+    if (! ((str[0] == 't') || (str[0] == 'f'))) return -1;
+
+    if (add_next_index_bool(array, str[0] == 't') == FAILURE)
+        return -1;
+
+    return 0;
+}
+
+zval* pdo_pgsql_parse_array(char *str, int len, pg_array_adder adder, char **error){
     zval *arr;
     MAKE_STD_ZVAL(arr);
 
@@ -202,7 +239,7 @@ zval* pdo_pgsql_parse_array(char *str, int len, char **error){
 
     array_init(arr);
 
-    if (array_scan(&str[1], len-2, arr, error) < 0) {
+    if (array_scan(&str[1], len-2, arr, adder, error) < 0) {
         *error = "parse error\n";
         ZVAL_NULL(arr);
         return arr;

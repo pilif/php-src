@@ -42,14 +42,64 @@
 #endif
 
 /* from postgresql/src/include/catalog/pg_type.h */
-#define BOOLOID          16
-#define BYTEAOID         17
-#define INT8OID          20
-#define INT2OID          21
-#define INT4OID          23
-#define TEXTOID          25
-#define OIDOID           26
-#define TEXTARRAYOID   1009
+#define BOOLOID           16
+#define BYTEAOID          17
+#define INT8OID           20
+#define INT2OID           21
+#define INT4OID           23
+#define TEXTOID           25
+#define OIDOID            26
+
+static Oid string_array_types[] = {
+	1002, 1003, 1009, 1014, 1015,
+	1115, 1185, 1183, 1270, 1182, // date/time/timestamps: handling as string for now
+	1187, // intervals. handling as string for now,
+	1231, // decimal - using strings in order to not lose precision
+	0,
+};
+
+static Oid int_array_types[] = {
+	1005, 1006, 1007, 1016,
+	0
+};
+
+static Oid bool_array_types[] = {
+	1000,
+	0
+};
+
+static Oid
+ double_array_types[] = {
+	1017, 1021, 1022,
+	0
+};
+
+typedef struct {
+	Oid *oids;
+	pg_array_adder type_caster;
+} array_type_caster_list;
+
+static array_type_caster_list array_casters[] = {
+	{string_array_types, &add_string_to_array},
+	{int_array_types, &add_long_to_array},
+	{bool_array_types, &add_bool_to_array},
+	{double_array_types, &add_double_to_array},
+	{NULL, NULL}
+};
+
+static int detect_array_type(pdo_pgsql_column* col){
+	for (int i = 0; array_casters[i].oids != NULL; i++){
+		for (int j = 0; array_casters[i].oids[j] != 0; j++){
+			if (col->pgsql_type == array_casters[i].oids[j]){
+				col->array_type_caster = array_casters[i].type_caster;
+				return 1;
+			}
+		}
+	}
+
+	col->array_type_caster = NULL;
+	return 0;
+}
 
 static int pgsql_stmt_dtor(pdo_stmt_t *stmt TSRMLS_DC)
 {
@@ -495,12 +545,10 @@ static int pgsql_stmt_describe(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 				PDO_PARAM_ZVAL : PDO_PARAM_STR;
 			break;
 #endif
-		case TEXTARRAYOID:
-			cols[colno].param_type = PDO_PARAM_ZVAL;
-			break;
 
 		default:
-			cols[colno].param_type = PDO_PARAM_STR;
+			cols[colno].param_type = (detect_array_type(&(S->cols[colno]))) ?
+				PDO_PARAM_ZVAL : PDO_PARAM_STR;
 	}
 
 	return 1;
@@ -552,10 +600,10 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 					*caller_frees = 1;
 				}
 #endif
-				if (S->cols[colno].pgsql_type == TEXTARRAYOID) {
+				if (S->cols[colno].array_type_caster != NULL) {
 					zval **ret = (zval**) emalloc(sizeof(zval));
 					char* err = NULL;
-					*ret = pdo_pgsql_parse_array(*ptr, *len, &err);
+					*ret = pdo_pgsql_parse_array(*ptr, *len, S->cols[colno].array_type_caster, &err);
 					if (err != NULL){
 						pdo_pgsql_error(stmt->dbh, PGRES_FATAL_ERROR, err);
 					}
