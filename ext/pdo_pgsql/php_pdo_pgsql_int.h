@@ -30,9 +30,6 @@
 #include "pdo_pgsql_parse_array.h"
 
 #define PHP_PDO_PGSQL_CONNECTION_FAILURE_SQLSTATE "08006"
-#ifdef HAVE_JSON
-#define PHP_PDO_PGSQL_OID_JSON 114
-#endif
 
 typedef struct {
 	const char *file;
@@ -124,9 +121,6 @@ enum pdo_pgsql_specific_constants {
 	PGSQL_TRANSACTION_INTRANS = PQTRANS_INTRANS,
 	PGSQL_TRANSACTION_INERROR = PQTRANS_INERROR,
 	PGSQL_TRANSACTION_UNKNOWN = PQTRANS_UNKNOWN,
-#ifdef HAVE_JSON
-	PGSQL_PARAM_JSON = PHP_PDO_PGSQL_OID_JSON
-#endif
 };
 
 php_stream *pdo_pgsql_create_lob_stream(pdo_dbh_t *stmt, int lfd, Oid oid TSRMLS_DC);
