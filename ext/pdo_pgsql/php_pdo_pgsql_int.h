@@ -61,12 +61,15 @@ typedef struct {
 #endif
 } pdo_pgsql_db_handle;
 
+typedef zval* (* pg_type_caster)(char*, int);
+
 typedef struct {
 	char         *def;
 	Oid          pgsql_type;
 	long         intval;
 	zend_bool    boolval;
 
+    pg_type_caster type_caster;
     pg_array_adder array_type_caster;
 } pdo_pgsql_column;
 

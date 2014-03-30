@@ -27,6 +27,7 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "ext/date/php_date.h"
 #include "pdo/php_pdo.h"
 #include "pdo/php_pdo_driver.h"
 #include "php_pdo_pgsql.h"
@@ -49,6 +50,47 @@
 #define INT4OID           23
 #define TEXTOID           25
 #define OIDOID            26
+
+static Oid date_time_types[] = {
+	1114, 1184,
+	0
+};
+
+zval* cast_datetime(char *str, int len){
+	zval *res;
+	MAKE_STD_ZVAL(res);
+
+	// in theory, DateTimeImmutable would be preferred, but php_date.h
+	// doesn't export that, so mutable date it is.
+	php_date_instantiate(php_date_get_date_ce(), res TSRMLS_CC);
+	if (!php_date_initialize(zend_object_store_get_object(res TSRMLS_CC), str, len, NULL, NULL, 0 TSRMLS_CC)) {
+		ZVAL_NULL(res);
+	}
+
+	return res;
+}
+
+typedef struct {
+	Oid *oids;
+	pg_type_caster type_caster;
+} type_caster_list;
+
+static type_caster_list type_casters[] = {
+	{date_time_types, &cast_datetime},
+	{NULL, NULL}
+};
+
+static int find_type_caster(pdo_pgsql_column *col){
+	for(int i = 0; type_casters[i].oids != NULL; i++){
+		for(int j = 0; type_casters[i].oids[j] != 0; j++){
+			if (col->pgsql_type == type_casters[i].oids[j]){
+				col->type_caster = type_casters[i].type_caster;
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
 
 static Oid string_array_types[] = {
 	1002, 1003, 1009, 1014, 1015,
@@ -547,8 +589,13 @@ static int pgsql_stmt_describe(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 #endif
 
 		default:
-			cols[colno].param_type = (detect_array_type(&(S->cols[colno]))) ?
-				PDO_PARAM_ZVAL : PDO_PARAM_STR;
+			if (detect_array_type(&(S->cols[colno])))
+				cols[colno].param_type = PDO_PARAM_ZVAL;
+			else if (find_type_caster(&(S->cols[colno])))
+				cols[colno].param_type = PDO_PARAM_ZVAL;
+			else
+				cols[colno].param_type = PDO_PARAM_STR;
+
 	}
 
 	return 1;
@@ -607,6 +654,16 @@ static int pgsql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, unsigned 
 					if (err != NULL){
 						pdo_pgsql_error(stmt->dbh, PGRES_FATAL_ERROR, err);
 					}
+
+					*len = sizeof(zval);
+					*ptr = (char*) ret;
+					*caller_frees = 1;
+				}
+
+				if (S->cols[colno].type_caster != NULL) {
+					zval **ret = (zval**) emalloc(sizeof(zval));
+
+					*ret = (S->cols[colno].type_caster)(*ptr, *len);
 
 					*len = sizeof(zval);
 					*ptr = (char*) ret;
