@@ -16,23 +16,23 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
 
-var_dump($pdo->getAttribute(PDO::PGSQL_ATTR_PARSE_JSON));
-var_dump($pdo->setAttribute(PDO::PGSQL_ATTR_PARSE_JSON, true));
+var_dump($pdo->getAttribute(PDO::PGSQL_ATTR_ADVANCED_TYPE_CONVERSIONS));
+var_dump($pdo->setAttribute(PDO::PGSQL_ATTR_ADVANCED_TYPE_CONVERSIONS, true));
 $st = $pdo->prepare('select \'{"foo": "bar", "baz": {"foo": 1}}\'::json');
 $st->execute();
 var_dump($st->fetchAll());
 
-$pdo->setAttribute(PDO::PGSQL_ATTR_PARSE_JSON, false);
+$pdo->setAttribute(PDO::PGSQL_ATTR_ADVANCED_TYPE_CONVERSIONS, false);
 $st = $pdo->prepare('select \'{"foo": "bar", "baz": {"foo": 1}}\'::json');
 $st->execute();
 var_dump($st->fetchAll());
 
-$st = $pdo->prepare('select \'{"foo": "bar", "baz": {"foo": 1}}\'::json', [PDO::PGSQL_ATTR_PARSE_JSON => true]);
+$st = $pdo->prepare('select \'{"foo": "bar", "baz": {"foo": 1}}\'::json', [PDO::PGSQL_ATTR_ADVANCED_TYPE_CONVERSIONS => true]);
 $st->execute();
 var_dump($st->fetchAll());
 
-$pdo->setAttribute(PDO::PGSQL_ATTR_PARSE_JSON, true);
-$st = $pdo->prepare('select \'{"foo": "bar", "baz": {"foo": 1}}\'::json', [PDO::PGSQL_ATTR_PARSE_JSON => false]);
+$pdo->setAttribute(PDO::PGSQL_ATTR_ADVANCED_TYPE_CONVERSIONS, true);
+$st = $pdo->prepare('select \'{"foo": "bar", "baz": {"foo": 1}}\'::json', [PDO::PGSQL_ATTR_ADVANCED_TYPE_CONVERSIONS => false]);
 $st->execute();
 var_dump($st->fetchAll());
 

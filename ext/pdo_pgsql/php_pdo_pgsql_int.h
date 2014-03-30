@@ -56,9 +56,7 @@ typedef struct {
 	int		disable_native_prepares;
 #endif
 	unsigned int stmt_counter;
-# ifdef HAVE_JSON
-    int auto_parse_json;
-#endif
+    int enable_adv_conversions;
 } pdo_pgsql_db_handle;
 
 typedef zval* (* pg_type_caster)(char*, int);
@@ -88,9 +86,8 @@ typedef struct {
 	Oid *param_types;
 #endif
 	zend_bool is_prepared;
-#ifdef HAVE_JSON
-    int auto_parse_json;
-#endif
+
+    int enable_adv_conversions;
 } pdo_pgsql_stmt;
 
 typedef struct {
@@ -110,7 +107,7 @@ extern struct pdo_stmt_methods pgsql_stmt_methods;
 enum {
 	PDO_PGSQL_ATTR_DISABLE_NATIVE_PREPARED_STATEMENT = PDO_ATTR_DRIVER_SPECIFIC,
 #ifdef HAVE_JSON
-    PDO_PGSQL_PARSE_JSON,
+    PDO_PGSQL_ADVANCED_TYPE_CONVERSIONS,
 #endif
 };
 

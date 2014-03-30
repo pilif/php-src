@@ -229,14 +229,12 @@ static int pgsql_handle_preparer(pdo_dbh_t *dbh, const char *sql, long sql_len, 
 	scrollable = pdo_attr_lval(driver_options, PDO_ATTR_CURSOR,
 		PDO_CURSOR_FWDONLY TSRMLS_CC) == PDO_CURSOR_SCROLL;
 
-#ifdef HAVE_JSON
 	/* Default to the setting on the handle */
-	S->auto_parse_json = H->auto_parse_json;
+	S->enable_adv_conversions = H->enable_adv_conversions;
 
 	if (driver_options){
-		S->auto_parse_json = pdo_attr_lval(driver_options, PDO_PGSQL_PARSE_JSON, H->auto_parse_json TSRMLS_CC);
+		S->enable_adv_conversions = pdo_attr_lval(driver_options, PDO_PGSQL_ADVANCED_TYPE_CONVERSIONS, H->enable_adv_conversions TSRMLS_CC);
 	}
-#endif
 
 	if (scrollable) {
 		if (S->cursor_name) {
@@ -455,11 +453,9 @@ static int pdo_pgsql_get_attribute(pdo_dbh_t *dbh, long attr, zval *return_value
 			ZVAL_STRING(return_value, tmp, 0);
 		}
 			break;
-#ifdef HAVE_JSON
-		case PDO_PGSQL_PARSE_JSON:
-			ZVAL_BOOL(return_value, H->auto_parse_json);
+		case PDO_PGSQL_ADVANCED_TYPE_CONVERSIONS:
+			ZVAL_BOOL(return_value, H->enable_adv_conversions);
 			break;
-#endif
 
 		default:
 			return 0;	
@@ -1024,11 +1020,9 @@ static int pdo_pgsql_set_attr(pdo_dbh_t *dbh, long attr, zval *val TSRMLS_DC)
 			H->disable_native_prepares = Z_LVAL_P(val);
 			return 1;
 #endif
-#ifdef HAVE_JSON
-		case PDO_PGSQL_PARSE_JSON:
-			H->auto_parse_json = Z_LVAL_P(val);
+		case PDO_PGSQL_ADVANCED_TYPE_CONVERSIONS:
+			H->enable_adv_conversions = Z_LVAL_P(val);
 			return 1;
-#endif
 
 		default:
 			return 0;
