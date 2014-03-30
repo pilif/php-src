@@ -985,6 +985,30 @@ static PHP_METHOD(PDO, pgsqlLOBUnlink)
 }
 /* }}} */
 
+/* {{{ proto bool PDO::quoteIdentifier(string identifier)
+   Returns an indentifier (table/column name) properly quoted for the current connection */
+static PHP_METHOD(PDO, pgsqlQuoteIdentifier)
+{
+	pdo_dbh_t *dbh;
+	pdo_pgsql_db_handle *H;
+	char *identifier, *quoted;
+	int idlen;
+
+	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s",
+				&identifier, &idlen)) {
+		RETURN_FALSE;
+	}
+
+	quoted = PQescapeIdentifier(H->server, identifier, idlen);
+	if (NULL == quoted){
+		pdo_pgsql_error(dbh, PGRES_FATAL_ERROR, "HY000");
+		RETURN_FALSE;
+	}else{
+		RETURN_STRING(quoted, 1);
+		PQfreemem(quoted);
+	}
+}
+/* }}} */
 
 static const zend_function_entry dbh_methods[] = {
 	PHP_ME(PDO, pgsqlLOBCreate, NULL, ZEND_ACC_PUBLIC)
@@ -994,6 +1018,7 @@ static const zend_function_entry dbh_methods[] = {
 	PHP_ME(PDO, pgsqlCopyFromFile, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(PDO, pgsqlCopyToArray, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(PDO, pgsqlCopyToFile, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(PDO, pgsqlQuoteIdentifier, NULL, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
