@@ -114,6 +114,9 @@ struct _zend_compiler_globals {
 
 	const zend_encoding **script_encoding_list;
 	size_t script_encoding_list_size;
+
+	zend_bool ps_count_nowarn;
+
 	zend_bool multibyte;
 	zend_bool detect_unicode;
 	zend_bool encoding_declared;

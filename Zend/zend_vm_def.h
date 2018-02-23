@@ -8149,7 +8149,8 @@ ZEND_VM_HANDLER(190, ZEND_COUNT, CONST|TMP|VAR|CV, UNUSED)
 		} else {
 			count = 1;
 		}
-		zend_error(E_WARNING, "count(): Parameter must be an array or an object that implements Countable");
+		if (!CG(ps_count_nowarn))
+			zend_error(E_WARNING, "count(): Parameter must be an array or an object that implements Countable");
 	} while (0);
 
 	ZVAL_LONG(EX_VAR(opline->result.var), count);
